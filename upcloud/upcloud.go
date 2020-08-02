@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -28,6 +29,7 @@ type Client struct {
 	common service
 
 	Accounts *AccountService
+	Pricing  *PricingService
 }
 
 type service struct {
@@ -47,6 +49,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.common.client = c
 
 	c.Accounts = (*AccountService)(&c.common)
+	c.Pricing = (*PricingService)(&c.common)
 
 	return c
 }
@@ -123,21 +126,18 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 
 	defer resp.Body.Close()
 
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return resp, err
+	}
+
+	//fmt.Println(string(data))
+
 	// On success, decode in to v if given
 	if c := resp.StatusCode; 200 <= c && c <= 299 {
 
-		/* // Inspect response and quit.
-		bodyBytes, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-		bodyString := string(bodyBytes)
-		fmt.Println(bodyString)
-		os.Exit(1)
-		*/
-
-		if v != nil {
-			decErr := json.NewDecoder(resp.Body).Decode(v)
+		if v != nil && data != nil {
+			decErr := json.Unmarshal(data, v)
 			if decErr == io.EOF {
 				decErr = nil
 			}
@@ -148,9 +148,11 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 
 	// On error, decode into ErrorResponse
 	errResp := &ErrorResponse{Response: resp}
-	err = json.NewDecoder(resp.Body).Decode(errResp)
-	if err != nil {
-		return resp, err
+	if data != nil {
+		err = json.Unmarshal(data, errResp)
+		if err != nil {
+			return resp, err
+		}
 	}
 	return resp, errResp
 
