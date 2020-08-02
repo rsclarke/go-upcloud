@@ -30,6 +30,7 @@ type Client struct {
 
 	Accounts *AccountService
 	Pricing  *PricingService
+	Zones    *ZonesService
 }
 
 type service struct {
@@ -50,6 +51,7 @@ func NewClient(httpClient *http.Client) *Client {
 
 	c.Accounts = (*AccountService)(&c.common)
 	c.Pricing = (*PricingService)(&c.common)
+	c.Zones = (*ZonesService)(&c.common)
 
 	return c
 }
