@@ -29,6 +29,7 @@ type Client struct {
 	common service
 
 	Accounts  *AccountService
+	Plans     *PlansService
 	Pricing   *PricingService
 	Timezones *TimezonesService
 	Zones     *ZonesService
@@ -51,6 +52,7 @@ func NewClient(httpClient *http.Client) *Client {
 	c.common.client = c
 
 	c.Accounts = (*AccountService)(&c.common)
+	c.Plans = (*PlansService)(&c.common)
 	c.Pricing = (*PricingService)(&c.common)
 	c.Timezones = (*TimezonesService)(&c.common)
 	c.Zones = (*ZonesService)(&c.common)
