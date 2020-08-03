@@ -168,8 +168,8 @@ type Account struct {
 	} `json:"ip_filters,omitempty"`
 }
 
-// AccountDetailsResponse represents the response from the Details API method
-type AccountDetailsResponse struct {
+// AccountDetails represents the request/response from the Details API method
+type AccountDetails struct {
 	Account *Account `json:"account"`
 }
 
@@ -183,10 +183,39 @@ func (s *AccountService) GetAccountDetails(ctx context.Context, username string)
 	}
 
 	account := new(Account)
-	resp, err := s.client.Do(ctx, req, &AccountDetailsResponse{Account: account})
+	resp, err := s.client.Do(ctx, req, &AccountDetails{Account: account})
 	if err != nil {
 		return nil, resp, err
 	}
 
 	return account, resp, nil
+}
+
+// ModifyAccount you probably want ModifyAccountDetails or ModifySubAccountDetails
+// kind can only be `details` or `sub`.
+// https://developers.upcloud.com/1.3/3-accounts/#modify-account-details
+func (s *AccountService) ModifyAccount(ctx context.Context, kind string, account *Account, username string) (*http.Response, error) {
+	trimAccount := *account
+	trimAccount.MainAccount = ""
+	trimAccount.Username = ""
+	trimAccount.Type = ""
+	trimAccount.Password = ""
+	u := fmt.Sprintf("account/%v/%v", kind, username)
+	req, err := s.client.NewRequest("PUT", u, &AccountDetails{Account: &trimAccount})
+	if err != nil {
+		return nil, err
+	}
+
+	return s.client.Do(ctx, req, nil)
+}
+
+// ModifyAccountDetails modifies the details of the given username with properties defined in acc.
+func (s *AccountService) ModifyAccountDetails(ctx context.Context, acc *Account, username string) (*http.Response, error) {
+	return s.ModifyAccount(ctx, "details", acc, username)
+}
+
+// ModifySubAccountDetails modifies the details of a sub account of the given username with properties defined in acc.
+func (s *AccountService) ModifySubAccountDetails(ctx context.Context, acc *Account, username string) (*http.Response, error) {
+	// MainAccount, Type and Username must not be set
+	return s.ModifyAccount(ctx, "sub", acc, username)
 }
