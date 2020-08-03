@@ -219,3 +219,31 @@ func (s *AccountService) ModifySubAccountDetails(ctx context.Context, acc *Accou
 	// MainAccount, Type and Username must not be set
 	return s.ModifyAccount(ctx, "sub", acc, username)
 }
+
+// SubAccount represents the request/response wrapper for AddSubAccount
+type SubAccount struct {
+	Account *Account `json:"sub_account"`
+}
+
+// AddSubAccount creates a new sub account with the details provided in acc.
+// https://developers.upcloud.com/1.3/3-accounts/#add-subaccount
+func (s *AccountService) AddSubAccount(ctx context.Context, acc *Account) (*http.Response, error) {
+	req, err := s.client.NewRequest("POST", "account/sub", &SubAccount{Account: acc})
+	if err != nil {
+		return nil, err
+	}
+
+	return s.client.Do(ctx, req, nil)
+}
+
+// DeleteSubAccount deletes a sub account of the given username
+// https://developers.upcloud.com/1.3/3-accounts/#delete-subaccount
+func (s *AccountService) DeleteSubAccount(ctx context.Context, username string) (*http.Response, error) {
+	u := fmt.Sprintf("account/sub/%v", username)
+	req, err := s.client.NewRequest("DELETE", u, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.client.Do(ctx, req, nil)
+}
